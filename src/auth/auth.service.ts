@@ -9,6 +9,8 @@ import { User } from 'src/users/user.entity';
 import { HashingProvider } from './providers/hashing.provider';
 import { GenerateTokenProvider } from './providers/generate-token.provider';
 import { OtpService } from 'src/otp/otp.service';
+import { RefreshTokenDto } from './dtos/refresh-token.dto';
+import { RefreshTokenProvider } from './providers/refresh-token.service';
 
 
 @Injectable()
@@ -28,6 +30,8 @@ export class AuthService {
     private readonly generateTokenProvider: GenerateTokenProvider,
 
     private readonly otpService: OtpService,
+
+    private readonly refreshTokenProvider: RefreshTokenProvider,
  
   ) {}
 
@@ -106,6 +110,10 @@ export class AuthService {
       expiresAt: tokens.expiresAt,
       user,
     };
+  }
+
+  async refreshTokens(refreshTokenDto: RefreshTokenDto) {
+    return await this.refreshTokenProvider.refreshTokens(refreshTokenDto.refreshToken);
   }
 
 }
