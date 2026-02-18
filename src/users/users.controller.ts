@@ -5,6 +5,10 @@ import { RegisterResponse } from './interfaces/register.interface';
 import { otpVerifyDto } from 'src/otp/dto/otp.dto';
 import { ResetPasswordDto } from './dtos/verify-reset.dto';
 import { RequestPasswordResetDto } from './dtos/request-passsword-reset.dto';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { Role } from './enums/user-role.enum';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
 
 @Controller('users')
 export class UsersController {
@@ -18,6 +22,9 @@ export class UsersController {
         return await this.usersService.registerUser(registerDto);
     }
 
+    
+    @UseGuards(AccessTokenGuard, RolesGuard)
+    @Roles(Role.ADMIN)
     @Get()
     async getAllUsers(): Promise<RegisterResponse[]> {
         return await this.usersService.getAllUsers();

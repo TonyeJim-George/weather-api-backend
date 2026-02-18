@@ -11,6 +11,7 @@ import { OtpPurpose } from 'src/otp/enums/otp.enum';
 import { otpVerifyDto } from 'src/otp/dto/otp.dto';
 import { ResetPasswordDto } from './dtos/verify-reset.dto';
 import { RequestPasswordResetDto } from './dtos/request-passsword-reset.dto';
+import { Role } from './enums/user-role.enum';
 
 
 @Injectable()
@@ -28,7 +29,7 @@ export class UsersService {
         private readonly hashingProvider: HashingProvider,
     ) {}
 
-    async registerUser(registerDto: RegisterDto): Promise<RegisterResponse> {
+    async registerUser(registerDto: RegisterDto, role: Role = Role.CUSTOMER): Promise<RegisterResponse> {
 
             // 1. Create the QueryRunner
             const queryRunner = this.dataSource.createQueryRunner();
@@ -64,7 +65,8 @@ export class UsersService {
             // 3. Save User (Inside Transaction)
             const newUser = queryRunner.manager.create(User, { 
                 email: registerDto.email, 
-                passwordHash: hashedPassword 
+                passwordHash: hashedPassword,
+                role: role, 
             });
             savedUser = await queryRunner.manager.save(newUser);
 
@@ -143,7 +145,7 @@ export class UsersService {
         async findByEmail(email: string): Promise<User | null> {
             return this.userRepository.findOne({ 
                 where: { email },
-                select: ['id', 'email', 'passwordHash', 'isActive'] });
+                select: ['id', 'email', 'passwordHash', 'role', 'isActive'] });
         }
 
         async activateAccount(verifydto: otpVerifyDto) {
