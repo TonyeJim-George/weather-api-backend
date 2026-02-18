@@ -12,6 +12,7 @@ import { UsersModule } from 'src/users/users.module';
 import { OtpModule } from 'src/otp/otp.module';
 import { PassportModule } from '@nestjs/passport';
 import { AccessTokenGuard } from './guards/access-token.guard';
+import { RefreshTokenProvider } from './providers/refresh-token.service';
 
 @Module({
   controllers: [AuthController],
@@ -20,7 +21,7 @@ import { AccessTokenGuard } from './guards/access-token.guard';
       provide: HashingProvider,
       useClass: BcryptProvider,
     },
-    GenerateTokenProvider, AccessTokenGuard,
+    GenerateTokenProvider, AccessTokenGuard, RefreshTokenProvider,
   ],
   imports: [PassportModule, TypeOrmModule.forFeature([LoginAudit]), forwardRef(() => UsersModule),
   JwtModule.registerAsync({

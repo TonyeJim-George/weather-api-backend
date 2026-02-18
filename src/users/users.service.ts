@@ -148,6 +148,10 @@ export class UsersService {
                 select: ['id', 'email', 'passwordHash', 'role', 'isActive'] });
         }
 
+        async findOneById(id: string): Promise<User | null> {
+            return this.userRepository.findOne({ where: { id } });
+        }
+
         async activateAccount(verifydto: otpVerifyDto) {
             const user = await this.otpService.verifyOtp(
                 verifydto.email,

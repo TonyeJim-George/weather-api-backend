@@ -1,9 +1,10 @@
-import { Body, Controller, Ip, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Ip, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dtos/login.dto';
 import { RegisterDto } from 'src/users/dtos/register.dto';
 import { UsersService } from 'src/users/users.service';
 import { Role } from 'src/users/enums/user-role.enum';
+import { RefreshTokenDto } from './dtos/refresh-token.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -22,6 +23,12 @@ export class AuthController {
   async registerAdmin(@Body() dto: RegisterDto) {
     return this.usersService.registerUser(dto, Role.ADMIN);
   }
+
+  @Post('refresh-tokens')
+  @HttpCode(HttpStatus.OK)
+  async refreshTokens(@Body() refreshTokenDto: RefreshTokenDto) {
+    return await this.authService.refreshTokens(refreshTokenDto);
+}
 }
 
 
