@@ -1,0 +1,6 @@
+POST http://localhost:3000/otp/generate
+Content-Type: application/json
+
+{
+  "userId": "d745b72a-2a59-479b-9cfa-0dc0ba3bc415"
+}

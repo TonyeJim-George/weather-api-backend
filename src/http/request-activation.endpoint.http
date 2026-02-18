@@ -1,0 +1,6 @@
+POST http://localhost:3000/users/request-account-activation
+Content-Type: application/json
+
+{
+    "email": "collinsbenson@gmail.com"
+}

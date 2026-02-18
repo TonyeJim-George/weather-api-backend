@@ -1,0 +1,45 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    container_name: customers_go_app
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+    command: npm run start:dev
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+
+  redis:
+    image: redis:7
+    container_name: customers_go_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+
+  db:
+    image: postgres:16
+    container_name: customers_go_db
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5433:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  redis-data:
+  db-data:

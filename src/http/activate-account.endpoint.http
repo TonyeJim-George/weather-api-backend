@@ -1,0 +1,7 @@
+POST http://localhost:3000/users/activate-account
+Content-Type: application/json
+
+{
+  "email": "divinegeorge@gmail.com",
+  "code": "620859" 
+}
