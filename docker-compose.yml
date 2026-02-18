@@ -12,9 +12,9 @@ services:
       - redis
       - db
     command: npm run start:dev
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
+    # dns:
+    #   - 8.8.8.8
+    #   - 8.8.4.4
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -43,3 +43,8 @@ services:
 volumes:
   redis-data:
   db-data:
+
+# Define the network here
+networks:
+  app-network:
+    driver: bridge
