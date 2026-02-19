@@ -1,0 +1,8 @@
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYjAyZGYwMS0yODlhLTQzYzItYWRiMS1hNGFkZmY2YTcwMTQiLCJlbWFpbCI6Im1vamlzb2xhQGdtYWlsLmNvbSIsInJvbGUiOiJjdXN0b21lciIsImlhdCI6MTc3MTUwNDc2MiwiZXhwIjoxNzcxNTA1NjYyfQ.AZ4QYYxGdogsIGoC34JGW9tbsGqwBZ-saZJnYKksa2c
+PUT http://localhost:3000/users/db02df01-289a-43c2-adb1-a4adff6a7014/phone-number
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "phoneNumber": "080479233454"
+}

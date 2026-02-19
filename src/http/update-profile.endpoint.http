@@ -1,0 +1,9 @@
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMWVhYTZjOC1kODVlLTRhYjktYmQyMy1hOGIyODk0NTNjNzQiLCJlbWFpbCI6ImRpdmluZWdlb3JnZUBnbWFpbC5jb20iLCJyb2xlIjoiY3VzdG9tZXIiLCJpYXQiOjE3NzE1MDI1NzQsImV4cCI6MTc3MTUwMzQ3NH0.Y57Z7cbOKSra4vf2QCecNtPHkXPXXzigs6-9t_HI4Ws
+
+PUT http://localhost:3000/users/update-profile/11eaa6c8-d85e-4ab9-bd23-a8b289453c74
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "email": "divinegeorge05@gmail.com"
+}
