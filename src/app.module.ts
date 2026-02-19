@@ -13,6 +13,8 @@ import { WeatherModule } from './modules/weather/weather.module';
 import { RedisModule } from './modules/redis/redis.module';
 import jwtConfig from './config/jwt.config';
 import weatherConfig from './modules/config/weather.config';
+import { RolesGuard } from './auth/guards/roles.guard';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [UsersModule, AuthModule, CustomersModule, 
@@ -31,6 +33,7 @@ import weatherConfig from './modules/config/weather.config';
     RedisModule
   ],
   controllers: [],
-  providers: [DatabaseConfigService],
+  providers: [DatabaseConfigService, 
+  ],
 })
 export class AppModule {}

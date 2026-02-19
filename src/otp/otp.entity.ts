@@ -24,7 +24,7 @@ export class Otp {
 
   // Link to User (One User has One Active OTP at a time usually, or One-to-Many if you keep history)
   // For activation, One-to-One is sufficient if we overwrite old ones.
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, user => user.otp, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;
 

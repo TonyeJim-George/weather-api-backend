@@ -1,3 +1,4 @@
 @accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiYjQzN2Q0MC00NDFjLTRkZmEtODAyOC03YzE0ODgwYjAwOTYiLCJlbWFpbCI6ImJpb2R1bm1pa2VAZ21haWwuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzcxNTAzOTA2LCJleHAiOjE3NzE1MDQ4MDZ9.O2aSvc2X1hysq0R8UIJl-tCZtR9UlEyiJ84YUJGtL7Y
-GET http://localhost:3000/users
+
+DELETE http://localhost:3000/users/delete-user/3a7c7b3e-3485-4b87-9d9f-9874d2a915f3
 Authorization: Bearer {{accessToken}}

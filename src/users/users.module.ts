@@ -7,10 +7,12 @@ import { OtpService } from 'src/otp/otp.service';
 import { Otp } from 'src/otp/otp.entity';
 import { MailService } from 'src/mail/mail.service';
 import { AuthModule } from 'src/auth/auth.module';
+import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 
 @Module({
   controllers: [UsersController],
-  providers: [UsersService, OtpService, MailService],
+  providers: [UsersService, OtpService, MailService, AccessTokenGuard, RolesGuard],
   imports: [TypeOrmModule.forFeature([User, Otp]), forwardRef(() => AuthModule)],
   exports: [UsersService],
 })

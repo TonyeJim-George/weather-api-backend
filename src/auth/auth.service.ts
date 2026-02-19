@@ -9,6 +9,11 @@ import { User } from 'src/users/user.entity';
 import { HashingProvider } from './providers/hashing.provider';
 import { GenerateTokenProvider } from './providers/generate-token.provider';
 import { OtpService } from 'src/otp/otp.service';
+import { RefreshTokenDto } from './dtos/refresh-token.dto';
+import { RefreshTokenProvider } from './providers/refresh-token.service';
+import { RedisService } from 'src/modules/redis/redis.service';
+import { ConfigService } from '@nestjs/config';
+import { convertExpirationToSeconds } from './utils/convert-expiration-to-seconds';
 
 
 @Injectable()
@@ -28,6 +33,12 @@ export class AuthService {
     private readonly generateTokenProvider: GenerateTokenProvider,
 
     private readonly otpService: OtpService,
+
+    private readonly refreshTokenProvider: RefreshTokenProvider,
+
+    private readonly redisService: RedisService,
+
+    private readonly configService: ConfigService,
  
   ) {}
 
@@ -56,8 +67,8 @@ export class AuthService {
     if (user && user.isActive === true && await this.hashingProvider.compare(loginDto.password, user.passwordHash)) {
 
         const { passwordHash: _, ...safeUser } = user;
-        return safeUser;
 
+        return safeUser;
     }
 
     return null;
@@ -65,6 +76,7 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto, ipAddress: string) {
+
     const user = await this.validateUser(loginDto);
 
     if(!user) {
@@ -90,13 +102,37 @@ export class AuthService {
                     user: existingUser,
                 });
             }
-        }     
+        } else {
+            await this.logLoginAttempt({
+                email: loginDto.email,
+                ipAddress,
+                status: 'FAILURE',
+                failureReason: 'USER_NOT_EXISTING',
+            });
+        }
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const tokens = await this.generateTokenProvider.generateTokens({
       id: user.id,
       email: user.email,
+      role: user.role,
+    });
+
+    // Invalidate previous access tokens for this user
+    await this.invalidatePreviousTokens(user.id);
+
+    // Store the new token in Redis as the active token for this user
+    const tokenTTL = convertExpirationToSeconds(
+      this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m',
+    );
+    await this.redisService.set(`user:${user.id}:active_token`, tokens.accessToken, tokenTTL);
+
+    await this.logLoginAttempt({
+      email: user.email,
+      ipAddress,
+      status: 'SUCCESS',
+      user: user as User,
     });
 
     return {
@@ -105,6 +141,41 @@ export class AuthService {
       expiresAt: tokens.expiresAt,
       user,
     };
+  }
+
+  private async invalidatePreviousTokens(userId: string) {
+    // Get the old token if it exists and add it to blacklist
+    const oldToken = await this.redisService.get(`user:${userId}:active_token`);
+    if (oldToken) {
+      // Get the token TTL and add old token to blacklist
+      const tokenTTL = convertExpirationToSeconds(
+        this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m',
+      );
+      await this.redisService.set(`token:blacklist:${oldToken}`, 'revoked', tokenTTL);
+    }
+  }
+
+  async refreshTokens(refreshTokenDto: RefreshTokenDto) {
+    return await this.refreshTokenProvider.refreshTokens(refreshTokenDto.refreshToken);
+  }
+
+  async getLoginAudit() {
+    return await this.loginAuditRepo.find({
+      relations: ['user'],
+      order: {
+        timestamp: 'DESC',
+      },
+    });
+  }
+
+  async logout(userId: string, token: string) {
+    const tokenTTL = convertExpirationToSeconds(
+      this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m',
+    );
+    // Add token to blacklist to immediately invalidate it
+    await this.redisService.set(`token:blacklist:${token}`, 'revoked', tokenTTL);
+    // Remove from active tokens
+    await this.redisService.delete(`user:${userId}:active_token`);
   }
 
 }

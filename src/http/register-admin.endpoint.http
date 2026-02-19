@@ -1,0 +1,10 @@
+POST http://localhost:3000/auth/register/admin
+Content-Type: application/json
+
+{
+  "email": "mikewizzy@gmail.com",
+  "password": "Password123!",
+  "firstName": "Mike",
+  "lastName": "Wizzy",
+  "phoneNumber": "08023105429"
+}

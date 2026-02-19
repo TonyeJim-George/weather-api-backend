@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './user.entity';
 import { DataSource, Repository } from 'typeorm';
@@ -11,6 +11,10 @@ import { OtpPurpose } from 'src/otp/enums/otp.enum';
 import { otpVerifyDto } from 'src/otp/dto/otp.dto';
 import { ResetPasswordDto } from './dtos/verify-reset.dto';
 import { RequestPasswordResetDto } from './dtos/request-passsword-reset.dto';
+import { Role } from './enums/user-role.enum';
+import { UpdateUserDto } from './dtos/update-user.dto';
+import { Otp } from 'src/otp/otp.entity';
+import { UpdatePhoneNumberDto } from './dtos/update-user.dto';
 
 
 @Injectable()
@@ -28,7 +32,7 @@ export class UsersService {
         private readonly hashingProvider: HashingProvider,
     ) {}
 
-    async registerUser(registerDto: RegisterDto): Promise<RegisterResponse> {
+    async registerUser(registerDto: RegisterDto, role: Role = Role.CUSTOMER): Promise<RegisterResponse> {
 
             // 1. Create the QueryRunner
             const queryRunner = this.dataSource.createQueryRunner();
@@ -64,7 +68,8 @@ export class UsersService {
             // 3. Save User (Inside Transaction)
             const newUser = queryRunner.manager.create(User, { 
                 email: registerDto.email, 
-                passwordHash: hashedPassword 
+                passwordHash: hashedPassword,
+                role: role, 
             });
             savedUser = await queryRunner.manager.save(newUser);
 
@@ -140,10 +145,33 @@ export class UsersService {
             }));
         }
 
+        async getUserByEmail(email: string): Promise<RegisterResponse> {
+            const user = await this.userRepository.findOne({ where: { email }, relations: ['profile'] });
+
+            if (!user) {
+                throw new NotFoundException('User not found');
+            }
+
+            return {
+                message: 'User retrieved successfully',
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    isActive: user.isActive,
+                    createdAt: user.createdAt,
+                },
+                profile: user.profile
+            };
+        }
+
         async findByEmail(email: string): Promise<User | null> {
             return this.userRepository.findOne({ 
                 where: { email },
-                select: ['id', 'email', 'passwordHash', 'isActive'] });
+                select: ['id', 'email', 'passwordHash', 'role', 'isActive'] });
+        }
+
+        async findOneById(id: string): Promise<User | null> {
+            return this.userRepository.findOne({ where: { id } });
         }
 
         async activateAccount(verifydto: otpVerifyDto) {
@@ -196,6 +224,116 @@ export class UsersService {
     await this.userRepository.save(user);
 
     return { message: 'Password reset successful' };
+  }
+
+  async updateUser(userId: string, updateUserDto: UpdateUserDto) {
+    const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['profile'] });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if new email already exists (if email is being updated)
+    if (updateUserDto.email && updateUserDto.email !== user.email) {
+      const existingEmail = await this.userRepository.findOne({
+        where: { email: updateUserDto.email },
+      });
+      if (existingEmail) {
+        throw new ConflictException('Email already in use');
+      }
+      user.email = updateUserDto.email;
+    }
+
+    // Update password if provided
+    if (updateUserDto.password) {
+      user.passwordHash = await this.hashingProvider.hash(updateUserDto.password, 10);
+    }
+
+    // Update user record
+    await this.userRepository.save(user);
+
+    // Update profile if firstName or lastName provided
+    if (updateUserDto.firstName || updateUserDto.lastName) {
+      if (user.profile) {
+        if (updateUserDto.firstName) {
+          user.profile.firstName = updateUserDto.firstName;
+        }
+        if (updateUserDto.lastName) {
+          user.profile.lastName = updateUserDto.lastName;
+        }
+        await this.dataSource.getRepository(CustomerProfile).save(user.profile);
+      }
+    }
+
+    return {
+      message: 'User updated successfully',
+      user: {
+        id: user.id,
+        email: user.email,
+        isActive: user.isActive,
+      },
+      profile: user.profile,
+    };
+  }
+
+  async deleteUser(userId: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['profile'] });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Delete OTPs belonging to this user (use QueryBuilder because entity property is a relation)
+    await this.dataSource
+      .createQueryBuilder()
+      .delete()
+      .from(Otp)
+      .where('"userId" = :id', { id: user.id })
+      .execute();
+
+    // Delete related profile first
+    if (user.profile) {
+      await this.dataSource.getRepository(CustomerProfile).remove(user.profile);
+    }
+
+    // Delete user
+    await this.userRepository.remove(user);
+
+    return { message: 'User deleted successfully', userId };
+  }
+
+  async updateCustomerPhoneNumber(userId: string, updatePhoneNumberDto: UpdatePhoneNumberDto) {
+    const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['profile'] });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.profile) {
+      throw new NotFoundException('User profile not found');
+    }
+
+    // Check if phone number already exists
+    const existingPhoneNumber = await this.dataSource.getRepository(CustomerProfile).findOne({
+      where: { phoneNumber: updatePhoneNumberDto.phoneNumber },
+    });
+
+    if (existingPhoneNumber && existingPhoneNumber.id !== user.profile.id) {
+      throw new ConflictException('Phone number already in use');
+    }
+
+    user.profile.phoneNumber = updatePhoneNumberDto.phoneNumber;
+    await this.dataSource.getRepository(CustomerProfile).save(user.profile);
+
+    return {
+      message: 'Phone number updated successfully',
+      profile: {
+        id: user.profile.id,
+        firstName: user.profile.firstName,
+        lastName: user.profile.lastName,
+        phoneNumber: user.profile.phoneNumber,
+      },
+    };
   }
 
 }
