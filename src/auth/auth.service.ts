@@ -60,8 +60,8 @@ export class AuthService {
     if (user && user.isActive === true && await this.hashingProvider.compare(loginDto.password, user.passwordHash)) {
 
         const { passwordHash: _, ...safeUser } = user;
-        return safeUser;
 
+        return safeUser;
     }
 
     return null;
@@ -69,6 +69,7 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto, ipAddress: string) {
+
     const user = await this.validateUser(loginDto);
 
     if(!user) {
@@ -94,7 +95,14 @@ export class AuthService {
                     user: existingUser,
                 });
             }
-        }     
+        } else {
+            await this.logLoginAttempt({
+                email: loginDto.email,
+                ipAddress,
+                status: 'FAILURE',
+                failureReason: 'USER_NOT_EXISTING',
+            });
+        }
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -102,6 +110,13 @@ export class AuthService {
       id: user.id,
       email: user.email,
       role: user.role,
+    });
+
+    await this.logLoginAttempt({
+      email: user.email,
+      ipAddress,
+      status: 'SUCCESS',
+      user: user as User,
     });
 
     return {
@@ -114,6 +129,15 @@ export class AuthService {
 
   async refreshTokens(refreshTokenDto: RefreshTokenDto) {
     return await this.refreshTokenProvider.refreshTokens(refreshTokenDto.refreshToken);
+  }
+
+  async getLoginAudit() {
+    return await this.loginAuditRepo.find({
+      relations: ['user'],
+      order: {
+        timestamp: 'DESC',
+      },
+    });
   }
 
 }
