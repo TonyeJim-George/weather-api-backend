@@ -2,9 +2,9 @@ POST http://localhost:3000/users/register
 Content-Type: application/json
 
 {
-  "email": "faithgeorge@gmail.com",
+  "email": "clintongeorge@gmail.com",
   "password": "Password123!",
-  "firstName": "Faith",
+  "firstName": "Clinton",
   "lastName": "George",
-  "phoneNumber": "080231022998"
+  "phoneNumber": "08023102120"
 }
