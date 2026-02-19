@@ -1,7 +1,7 @@
 import { LoginAudit } from 'src/auth/login-audit.entity';
 import { CustomerProfile } from 'src/customers/customer-profile.entity';
 import { Otp } from 'src/otp/otp.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany, CreateDateColumn, DeleteDateColumn } from 'typeorm';
 import { Role } from './enums/user-role.enum';
 
 @Entity()
@@ -38,4 +38,7 @@ export class User {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @DeleteDateColumn() 
+  deletedAt: Date;
 }

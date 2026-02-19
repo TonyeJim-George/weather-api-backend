@@ -1,5 +1,6 @@
+import { Delete } from '@nestjs/common';
 import { User } from 'src/users/user.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, DeleteDateColumn } from 'typeorm';
 
 @Entity()
 export class LoginAudit {
@@ -19,9 +20,12 @@ export class LoginAudit {
   failureReason: string;
 
   // Nullable because a failed login might come from a non-existent user
-  @ManyToOne(() => User, (user) => user.auditLogs, { nullable: true })
+  @ManyToOne(() => User, (user) => user.auditLogs, { onDelete: 'SET NULL', nullable: true })
   user: User;
 
   @CreateDateColumn()
   timestamp: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 }
