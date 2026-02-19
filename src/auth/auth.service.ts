@@ -95,7 +95,14 @@ export class AuthService {
                     user: existingUser,
                 });
             }
-        }     
+        } else {
+            await this.logLoginAttempt({
+                email: loginDto.email,
+                ipAddress,
+                status: 'FAILURE',
+                failureReason: 'USER_NOT_EXISTING',
+            });
+        }
       throw new UnauthorizedException('Invalid credentials');
     }
 
