@@ -193,9 +193,19 @@ export class UsersService {
     }
 
     async requestAccountActivation(requestresetDto: RequestPasswordResetDto) {
+        const user = await this.findByEmail(requestresetDto.email);
+
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        if (user.isActive) {
+            throw new BadRequestException('Account is already active');
+        }
+
         return this.otpService.generateOtp(
-        requestresetDto.email,
-        OtpPurpose.ACCOUNT_ACTIVATION,
+            requestresetDto.email,
+            OtpPurpose.ACCOUNT_ACTIVATION,
         );
     }
 
