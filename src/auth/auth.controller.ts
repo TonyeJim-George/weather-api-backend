@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Ip, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Ip, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dtos/login.dto';
 import { RegisterDto } from 'src/users/dtos/register.dto';
@@ -38,6 +38,15 @@ export class AuthController {
   @Get('login-audit')
   async getLoginAudit() {
     return await this.authService.getLoginAudit();
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Req() req: any) {
+    const token = req.headers.authorization.split(' ')[1];
+    await this.authService.logout(req.user.sub, token);
+    return { message: 'Successfully logged out' };
   }
 
 }

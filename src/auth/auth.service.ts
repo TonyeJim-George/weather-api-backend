@@ -11,6 +11,9 @@ import { GenerateTokenProvider } from './providers/generate-token.provider';
 import { OtpService } from 'src/otp/otp.service';
 import { RefreshTokenDto } from './dtos/refresh-token.dto';
 import { RefreshTokenProvider } from './providers/refresh-token.service';
+import { RedisService } from 'src/modules/redis/redis.service';
+import { ConfigService } from '@nestjs/config';
+import { convertExpirationToSeconds } from './utils/convert-expiration-to-seconds';
 
 
 @Injectable()
@@ -32,6 +35,10 @@ export class AuthService {
     private readonly otpService: OtpService,
 
     private readonly refreshTokenProvider: RefreshTokenProvider,
+
+    private readonly redisService: RedisService,
+
+    private readonly configService: ConfigService,
  
   ) {}
 
@@ -112,6 +119,15 @@ export class AuthService {
       role: user.role,
     });
 
+    // Invalidate previous access tokens for this user
+    await this.invalidatePreviousTokens(user.id);
+
+    // Store the new token in Redis as the active token for this user
+    const tokenTTL = convertExpirationToSeconds(
+      this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m',
+    );
+    await this.redisService.set(`user:${user.id}:active_token`, tokens.accessToken, tokenTTL);
+
     await this.logLoginAttempt({
       email: user.email,
       ipAddress,
@@ -127,6 +143,18 @@ export class AuthService {
     };
   }
 
+  private async invalidatePreviousTokens(userId: string) {
+    // Get the old token if it exists and add it to blacklist
+    const oldToken = await this.redisService.get(`user:${userId}:active_token`);
+    if (oldToken) {
+      // Get the token TTL and add old token to blacklist
+      const tokenTTL = convertExpirationToSeconds(
+        this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m',
+      );
+      await this.redisService.set(`token:blacklist:${oldToken}`, 'revoked', tokenTTL);
+    }
+  }
+
   async refreshTokens(refreshTokenDto: RefreshTokenDto) {
     return await this.refreshTokenProvider.refreshTokens(refreshTokenDto.refreshToken);
   }
@@ -138,6 +166,16 @@ export class AuthService {
         timestamp: 'DESC',
       },
     });
+  }
+
+  async logout(userId: string, token: string) {
+    const tokenTTL = convertExpirationToSeconds(
+      this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m',
+    );
+    // Add token to blacklist to immediately invalidate it
+    await this.redisService.set(`token:blacklist:${token}`, 'revoked', tokenTTL);
+    // Remove from active tokens
+    await this.redisService.delete(`user:${userId}:active_token`);
   }
 
 }
