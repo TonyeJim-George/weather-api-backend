@@ -21,4 +21,8 @@ export class RedisService implements OnModuleInit {
   async set(key: string, value: string, ttl: number) {
     await this.client.set(key, value, 'EX', ttl);
   }
+
+  async delete(key: string): Promise<void> {
+    await this.client.del(key);
+  }
 }
