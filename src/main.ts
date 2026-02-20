@@ -17,8 +17,8 @@ async function bootstrap() {
 
   // Swagger Configuration
   const config = new DocumentBuilder()
-    .setTitle('Customers Go API')
-    .setDescription('Comprehensive API documentation for Customers Go platform')
+    .setTitle('Weather API')
+    .setDescription('Comprehensive API documentation for Weather for Customers platform')
     .setVersion('1.0.0')
     .addBearerAuth({
       type: 'http',

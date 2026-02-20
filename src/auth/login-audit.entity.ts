@@ -1,4 +1,3 @@
-import { Delete } from '@nestjs/common';
 import { User } from 'src/users/user.entity';
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, DeleteDateColumn } from 'typeorm';
 
