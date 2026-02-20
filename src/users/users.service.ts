@@ -15,6 +15,7 @@ import { Role } from './enums/user-role.enum';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { Otp } from 'src/otp/otp.entity';
 import { UpdatePhoneNumberDto } from './dtos/update-user.dto';
+import { LoginAudit } from 'src/auth/login-audit.entity';
 
 
 @Injectable()
@@ -286,7 +287,7 @@ export class UsersService {
     };
   }
 
-  async deleteUser(userId: string) {
+async deleteUser(userId: string) {
     const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['profile'] });
 
     if (!user) {
@@ -301,13 +302,21 @@ export class UsersService {
       .where('"userId" = :id', { id: user.id })
       .execute();
 
+    // Soft delete related LoginAudit records
+    await this.dataSource
+      .createQueryBuilder()
+      .update(LoginAudit)
+      .set({ deletedAt: new Date() })
+      .where('"userId" = :id', { id: user.id })
+      .execute();
+
     // Delete related profile first
     if (user.profile) {
       await this.dataSource.getRepository(CustomerProfile).remove(user.profile);
     }
 
-    // Delete user
-    await this.userRepository.remove(user);
+    // Soft delete user
+    await this.userRepository.softDelete(user.id);
 
     return { message: 'User deleted successfully', userId };
   }
